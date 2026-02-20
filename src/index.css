@@ -1,15 +1,97 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
+
+@theme {
+	/* ── Fonts ─────────────────────────────── */
+	--font-display: 'Space Grotesk', sans-serif;
+	--font-mono: 'JetBrains Mono', monospace;
+
+	/* ── Brand colours ──────────────────────── */
+	--color-bg: #080808;
+	--color-surface: #111111;
+	--color-surface-2: #181818;
+	--color-border: #222222;
+
+	--color-text: #f0f0f0;
+	--color-muted: #555555;
+	--color-dim: #333333;
+
+	--color-cyan: #00e5ff;
+	--color-green: #00ff88;
+	--color-red: #ff4444;
+
+	/* ── Animations ─────────────────────────── */
+	--animate-scan: scan 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	--animate-fadein: fadein 0.35s ease both;
+	--animate-slidein: slidein 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes scan {
+	0% {
+		transform: translateX(-100%);
+	}
+
+	100% {
+		transform: translateX(420%);
+	}
+}
+
+@keyframes fadein {
+	from {
+		opacity: 0;
+	}
+
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes slidein {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ── Base ───────────────────────────────────── */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	color-scheme: dark;
+}
+
+/* ── Light mode overrides ───────────────────── */
+html.light {
+	color-scheme: light;
+
+	--color-bg: #f5f5f5;
+	--color-surface: #ffffff;
+	--color-surface-2: #ebebeb;
+	--color-border: #d4d4d4;
+
+	--color-text: #0a0a0a;
+	--color-muted: #888888;
+	--color-dim: #c0c0c0;
+
+	--color-cyan: #0099bb;
+	--color-green: #00955a;
+	--color-red: #dd2222;
+}
 
 body {
 	margin: 0;
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
-		'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
-		'Helvetica Neue', sans-serif;
+	background: var(--color-bg);
+	color: var(--color-text);
+	font-family: var(--font-mono);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-}
-
-code {
-	font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-		monospace;
+	transition: background 0.2s, color 0.2s;
 }
