@@ -149,6 +149,43 @@ const App = () => {
 		setErrorMsg('')
 	}
 
+	const handleFileDownload = async (downloadUrl: string, filename: string) => {
+		try {
+			// Ensure we don't double up the base URL if downloadUrl is already absolute
+			const fullUrl = downloadUrl.startsWith('http')
+				? downloadUrl
+				: `${API_BASE}${downloadUrl.startsWith('/') ? '' : '/'}${downloadUrl}`
+
+			const res = await fetch(fullUrl)
+			if (!res.ok) {
+				const text = await res.text().catch(() => '')
+				let msg = 'Failed to download file'
+				try {
+					const data = JSON.parse(text)
+					msg = data.error || data.detail || data.message || msg
+				} catch {
+					if (text) msg = text.slice(0, 200)
+				}
+				setErrorMsg(msg)
+				setStatus('error')
+				return
+			}
+
+			const blob = await res.blob()
+			const url = window.URL.createObjectURL(blob)
+			const a = document.createElement('a')
+			a.href = url
+			a.download = filename
+			document.body.appendChild(a)
+			a.click()
+			window.URL.revokeObjectURL(url)
+			document.body.removeChild(a)
+		} catch (err) {
+			setErrorMsg('Network error during download')
+			setStatus('error')
+		}
+	}
+
 	return (
 		<div class="min-h-screen bg-bg flex flex-col items-center justify-center px-4 py-16">
 
@@ -349,10 +386,9 @@ const App = () => {
 							</p>
 
 							<div class="flex gap-3">
-								<a
-									href={`${API_BASE}${res().download_url}`}
-									download={res().filename}
-									rel="noopener noreferrer"
+								<button
+									type="button"
+									onClick={() => handleFileDownload(res().download_url, res().filename)}
 									class="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] px-4 py-2.5 font-medium transition-colors duration-150"
 									style={{
 										border: '1px solid color-mix(in srgb, var(--color-green) 40%, transparent)',
@@ -360,8 +396,8 @@ const App = () => {
 									}}
 								>
 									<span aria-hidden="true">↓</span>
-									Save file
-								</a>
+									Save to Device
+								</button>
 								<button
 									type="button"
 									onClick={reset}
