@@ -13,7 +13,9 @@ interface DownloadResult {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const API_BASE = 'http://localhost:8000'
+// Read from the Vite env – falls back to localhost for local development.
+// Set VITE_API_BASE in a .env file when deploying to a different host.
+const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, '') ?? 'http://localhost:8000'
 
 const PLATFORMS = [
 	{ name: 'YouTube', pattern: /youtube\.com|youtu\.be/i },
@@ -58,7 +60,22 @@ const App = () => {
 
 	const handleDownload = async (e: SubmitEvent) => {
 		e.preventDefault()
-		if (!url().trim()) return
+		const trimmed = url().trim()
+		if (!trimmed) return
+
+		// Client-side scheme guard — block javascript:, data:, file:, etc.
+		try {
+			const parsed = new URL(trimmed)
+			if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+				setErrorMsg(`Unsupported URL scheme "${parsed.protocol}". Only http and https are allowed.`)
+				setStatus('error')
+				return
+			}
+		} catch {
+			setErrorMsg('Invalid URL. Please enter a valid http or https URL.')
+			setStatus('error')
+			return
+		}
 
 		setStatus('loading')
 		setResult(null)
@@ -68,7 +85,7 @@ const App = () => {
 			const res = await fetch(`${API_BASE}/api/download`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ url: url().trim() }),
+				body: JSON.stringify({ url: trimmed }),
 			})
 
 			if (!res.ok) {
@@ -296,6 +313,7 @@ const App = () => {
 								<a
 									href={`${API_BASE}${res().download_url}`}
 									download={res().filename}
+									rel="noopener noreferrer"
 									class="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] px-4 py-2.5 font-medium transition-colors duration-150"
 									style={{
 										border: '1px solid color-mix(in srgb, var(--color-green) 40%, transparent)',
