@@ -82,22 +82,61 @@ const App = () => {
 		setErrorMsg('')
 
 		try {
-			const res = await fetch(`${API_BASE}/api/download`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ url: trimmed }),
-			})
-
-			if (!res.ok) {
-				const data = await res.json().catch(() => ({}))
-				throw new Error(data.detail ?? `Server error ${res.status}`)
+			let res: Response
+			try {
+				res = await fetch(`${API_BASE}/api/download`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ url: trimmed }),
+				})
+			} catch {
+				// Network-level failure (offline, CORS, DNS, etc.)
+				setErrorMsg('Unable to reach the server. Check your connection and try again.')
+				setStatus('error')
+				return
 			}
 
-			const data: DownloadResult = await res.json()
+			if (!res.ok) {
+				const text = await res.text().catch(() => '')
+				let msg = `Server error ${res.status}`
+				try {
+					const data = JSON.parse(text)
+					if (typeof data.detail === 'string') {
+						msg = data.detail
+					} else if (Array.isArray(data.detail)) {
+						// FastAPI validation errors — join field messages
+						msg = data.detail
+							.map((e: { loc?: string[]; msg?: string }) =>
+								e.msg ?? JSON.stringify(e)
+							)
+							.join(', ')
+					} else if (typeof data.message === 'string') {
+						msg = data.message
+					} else if (typeof data.error === 'string') {
+						msg = data.error
+					}
+				} catch {
+					// Response wasn't JSON — use plain text if available
+					if (text) msg = text.slice(0, 200)
+				}
+				setErrorMsg(msg)
+				setStatus('error')
+				return
+			}
+
+			let data: DownloadResult
+			try {
+				data = await res.json()
+			} catch {
+				setErrorMsg('Received an unexpected response from the server.')
+				setStatus('error')
+				return
+			}
 			setResult(data)
 			setStatus('success')
 		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : 'Unknown error occurred'
+			// Last-resort fallback — should rarely be reached
+			const msg = err instanceof Error ? err.message : 'An unexpected error occurred.'
 			setErrorMsg(msg)
 			setStatus('error')
 		}
